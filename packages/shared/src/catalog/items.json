@@ -1,0 +1,98 @@
+{
+  "items": [
+    { "id": "c_mint", "slot": "color", "price": 0, "name": { "ru": "Мята", "en": "Mint" }, "color": "#7fd8be" },
+    { "id": "c_peach", "slot": "color", "price": 30, "name": { "ru": "Персик", "en": "Peach" }, "color": "#ffb38a" },
+    { "id": "c_lilac", "slot": "color", "price": 30, "name": { "ru": "Сирень", "en": "Lilac" }, "color": "#b9a3ff" },
+    { "id": "c_sky", "slot": "color", "price": 30, "name": { "ru": "Небо", "en": "Sky" }, "color": "#8ecae6" },
+    { "id": "c_lemon", "slot": "color", "price": 40, "name": { "ru": "Лимон", "en": "Lemon" }, "color": "#ffe066" },
+    { "id": "c_rose", "slot": "color", "price": 40, "name": { "ru": "Роза", "en": "Rose" }, "color": "#ff8fab" },
+
+    { "id": "h_beanie", "slot": "hat", "price": 40, "name": { "ru": "Шапочка", "en": "Beanie" }, "svg": [
+      { "el": "path", "a": { "d": "M68 56 Q70 10 100 10 Q130 10 132 56 Z", "fill": "#e76f51" } },
+      { "el": "rect", "a": { "x": "64", "y": "48", "width": "72", "height": "12", "rx": "6", "fill": "#f4a261" } },
+      { "el": "circle", "a": { "cx": "100", "cy": "10", "r": "8", "fill": "#f4a261" } }
+    ] },
+    { "id": "h_crown", "slot": "hat", "price": 120, "name": { "ru": "Корона", "en": "Crown" }, "svg": [
+      { "el": "polygon", "a": { "points": "72,52 70,18 86,34 100,8 114,34 130,18 128,52", "fill": "#ffc93c", "stroke": "#e0a100", "stroke-width": "3", "stroke-linejoin": "round" } },
+      { "el": "circle", "a": { "cx": "100", "cy": "40", "r": "5", "fill": "#e63946" } },
+      { "el": "circle", "a": { "cx": "84", "cy": "44", "r": "3.5", "fill": "#4895ef" } },
+      { "el": "circle", "a": { "cx": "116", "cy": "44", "r": "3.5", "fill": "#4895ef" } }
+    ] },
+    { "id": "h_party", "slot": "hat", "price": 60, "name": { "ru": "Колпак", "en": "Party hat" }, "svg": [
+      { "el": "polygon", "a": { "points": "80,50 100,2 120,50", "fill": "#4cc9f0" } },
+      { "el": "path", "a": { "d": "M88 32 L112 32 M84 42 L116 42 M93 20 L107 20", "stroke": "#f72585", "stroke-width": "4", "stroke-linecap": "round" } },
+      { "el": "circle", "a": { "cx": "100", "cy": "4", "r": "6", "fill": "#f72585" } }
+    ] },
+    { "id": "h_flower", "slot": "hat", "price": 35, "name": { "ru": "Цветок", "en": "Flower" }, "svg": [
+      { "el": "circle", "a": { "cx": "100", "cy": "8", "r": "8", "fill": "#ffafcc" } },
+      { "el": "circle", "a": { "cx": "113", "cy": "17", "r": "8", "fill": "#ffafcc" } },
+      { "el": "circle", "a": { "cx": "87", "cy": "17", "r": "8", "fill": "#ffafcc" } },
+      { "el": "circle", "a": { "cx": "108", "cy": "31", "r": "8", "fill": "#ffafcc" } },
+      { "el": "circle", "a": { "cx": "92", "cy": "31", "r": "8", "fill": "#ffafcc" } },
+      { "el": "circle", "a": { "cx": "100", "cy": "21", "r": "7", "fill": "#ffd166" } }
+    ] },
+
+    { "id": "g_round", "slot": "glasses", "price": 35, "name": { "ru": "Круглые очки", "en": "Round glasses" }, "svg": [
+      { "el": "circle", "a": { "cx": "80", "cy": "118", "r": "20", "fill": "none", "stroke": "#2b2d42", "stroke-width": "4" } },
+      { "el": "circle", "a": { "cx": "120", "cy": "118", "r": "20", "fill": "none", "stroke": "#2b2d42", "stroke-width": "4" } },
+      { "el": "path", "a": { "d": "M98 116 Q100 112 102 116", "fill": "none", "stroke": "#2b2d42", "stroke-width": "4" } }
+    ] },
+    { "id": "g_shades", "slot": "glasses", "price": 70, "name": { "ru": "Тёмные очки", "en": "Shades" }, "svg": [
+      { "el": "rect", "a": { "x": "56", "y": "104", "width": "42", "height": "26", "rx": "10", "fill": "#1b1b2f", "opacity": "0.92" } },
+      { "el": "rect", "a": { "x": "102", "y": "104", "width": "42", "height": "26", "rx": "10", "fill": "#1b1b2f", "opacity": "0.92" } },
+      { "el": "path", "a": { "d": "M96 110 L104 110", "stroke": "#1b1b2f", "stroke-width": "4" } },
+      { "el": "path", "a": { "d": "M64 110 L76 110", "stroke": "#ffffff", "stroke-width": "3", "stroke-linecap": "round", "opacity": "0.6" } }
+    ] },
+    { "id": "g_hearts", "slot": "glasses", "price": 80, "name": { "ru": "Очки-сердечки", "en": "Heart glasses" }, "svg": [
+      { "el": "path", "a": { "d": "M80 136 L62 118 A10 10 0 0 1 80 106 A10 10 0 0 1 98 118 Z", "fill": "#ff4d6d", "opacity": "0.85", "stroke": "#c9184a", "stroke-width": "3" } },
+      { "el": "path", "a": { "d": "M120 136 L102 118 A10 10 0 0 1 120 106 A10 10 0 0 1 138 118 Z", "fill": "#ff4d6d", "opacity": "0.85", "stroke": "#c9184a", "stroke-width": "3" } }
+    ] },
+
+    { "id": "o_bow", "slot": "outfit", "price": 30, "name": { "ru": "Бабочка", "en": "Bow tie" }, "svg": [
+      { "el": "polygon", "a": { "points": "100,176 80,164 80,188", "fill": "#d62828" } },
+      { "el": "polygon", "a": { "points": "100,176 120,164 120,188", "fill": "#d62828" } },
+      { "el": "circle", "a": { "cx": "100", "cy": "176", "r": "6", "fill": "#9d0208" } }
+    ] },
+    { "id": "o_scarf", "slot": "outfit", "price": 45, "name": { "ru": "Шарф", "en": "Scarf" }, "svg": [
+      { "el": "rect", "a": { "x": "10", "y": "160", "width": "180", "height": "16", "fill": "#3a86ff" } },
+      { "el": "path", "a": { "d": "M40 160 L40 176 M70 160 L70 176 M130 160 L130 176 M160 160 L160 176", "stroke": "#ffffff", "stroke-width": "4", "opacity": "0.5" } },
+      { "el": "rect", "a": { "x": "126", "y": "170", "width": "14", "height": "26", "rx": "4", "fill": "#3a86ff" } }
+    ] },
+    { "id": "o_stripes", "slot": "outfit", "price": 55, "name": { "ru": "Тельняшка", "en": "Striped shirt" }, "svg": [
+      { "el": "rect", "a": { "x": "0", "y": "164", "width": "200", "height": "40", "fill": "#ffffff" } },
+      { "el": "path", "a": { "d": "M0 170 H200 M0 180 H200 M0 190 H200", "stroke": "#1d3557", "stroke-width": "5" } }
+    ] },
+
+    { "id": "b_none", "slot": "background", "price": 0, "name": { "ru": "Без узора", "en": "Plain" } },
+    { "id": "b_dots", "slot": "background", "price": 25, "name": { "ru": "Горошек", "en": "Dots" }, "pattern": "dots", "color": "#ffffff" },
+    { "id": "b_stripes", "slot": "background", "price": 25, "name": { "ru": "Полоски", "en": "Stripes" }, "pattern": "stripes", "color": "#ffffff" },
+    { "id": "b_stars", "slot": "background", "price": 50, "name": { "ru": "Звёзды", "en": "Stars" }, "pattern": "stars", "color": "#ffd166" },
+    { "id": "b_waves", "slot": "background", "price": 40, "name": { "ru": "Волны", "en": "Waves" }, "pattern": "waves", "color": "#ffffff" },
+
+    { "id": "f_berry", "slot": "food", "price": 2, "name": { "ru": "Ягода", "en": "Berry" }, "food": { "satiety": 8, "mood": 3 }, "svg": [
+      { "el": "circle", "a": { "cx": "20", "cy": "24", "r": "11", "fill": "#d00000" } },
+      { "el": "path", "a": { "d": "M14 13 L20 16 L26 13 L20 10 Z", "fill": "#38b000" } },
+      { "el": "circle", "a": { "cx": "16", "cy": "21", "r": "1.5", "fill": "#ffd166" } },
+      { "el": "circle", "a": { "cx": "23", "cy": "27", "r": "1.5", "fill": "#ffd166" } }
+    ] },
+    { "id": "f_apple", "slot": "food", "price": 3, "name": { "ru": "Яблоко", "en": "Apple" }, "food": { "satiety": 15, "mood": 2 }, "svg": [
+      { "el": "path", "a": { "d": "M20 12 C8 6 2 18 6 27 C9 34 15 37 20 34 C25 37 31 34 34 27 C38 18 32 6 20 12 Z", "fill": "#e63946" } },
+      { "el": "path", "a": { "d": "M20 12 Q21 6 24 3", "stroke": "#6d4c41", "stroke-width": "2.5", "fill": "none", "stroke-linecap": "round" } },
+      { "el": "ellipse", "a": { "cx": "27", "cy": "8", "rx": "5", "ry": "2.5", "fill": "#52b788" } }
+    ] },
+    { "id": "f_carrot", "slot": "food", "price": 4, "name": { "ru": "Морковка", "en": "Carrot" }, "food": { "satiety": 18, "mood": 1 }, "svg": [
+      { "el": "path", "a": { "d": "M12 12 L30 16 L16 36 Z", "fill": "#f77f00", "stroke-linejoin": "round", "stroke": "#f77f00", "stroke-width": "3" } },
+      { "el": "path", "a": { "d": "M12 12 L6 4 M12 12 L12 2 M12 12 L4 10", "stroke": "#38b000", "stroke-width": "3", "stroke-linecap": "round" } }
+    ] },
+    { "id": "f_soup", "slot": "food", "price": 8, "name": { "ru": "Суп", "en": "Soup" }, "food": { "satiety": 35, "mood": 4 }, "svg": [
+      { "el": "path", "a": { "d": "M4 18 H36 C36 30 28 36 20 36 C12 36 4 30 4 18 Z", "fill": "#4361ee" } },
+      { "el": "ellipse", "a": { "cx": "20", "cy": "18", "rx": "16", "ry": "4", "fill": "#ffb703" } },
+      { "el": "path", "a": { "d": "M14 12 Q12 8 14 4 M22 12 Q20 8 22 4", "stroke": "#adb5bd", "stroke-width": "2", "fill": "none", "stroke-linecap": "round" } }
+    ] },
+    { "id": "f_cake", "slot": "food", "price": 10, "name": { "ru": "Пирожное", "en": "Cake" }, "food": { "satiety": 20, "mood": 15 }, "svg": [
+      { "el": "rect", "a": { "x": "6", "y": "18", "width": "28", "height": "16", "rx": "3", "fill": "#f4d6a0" } },
+      { "el": "path", "a": { "d": "M6 20 Q6 12 20 12 Q34 12 34 20 Q30 24 27 20 Q23 25 20 20 Q16 25 13 20 Q9 24 6 20 Z", "fill": "#ff8fab" } },
+      { "el": "circle", "a": { "cx": "20", "cy": "9", "r": "4", "fill": "#d00000" } }
+    ] }
+  ]
+}
