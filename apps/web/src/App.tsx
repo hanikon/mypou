@@ -6,7 +6,10 @@ import { RoomBackground } from './rooms/RoomBackground';
 import { BathroomTray, BedroomTray, bubbles, jumping, KitchenTray, mouthOpen, petSvg, PlayroomTray } from './rooms/Trays';
 import { emotion, load, loadState, overlay, pet, room, startClock, toast } from './state/store';
 import { Nav, StatsBar } from './ui/Hud';
+import { Friends } from './ui/Friends';
+import { Settings } from './ui/Settings';
 import { Shop } from './ui/Shop';
+import { Visit } from './ui/Visit';
 
 const TRAYS = { kitchen: KitchenTray, bathroom: BathroomTray, bedroom: BedroomTray, playroom: PlayroomTray };
 
@@ -57,6 +60,9 @@ export function App() {
       <Nav />
       {ov?.kind === 'shop' && <Shop initialTab={ov.tab} />}
       {ov?.kind === 'game' && <Bubbles />}
+      {ov?.kind === 'settings' && <Settings />}
+      {ov?.kind === 'friends' && <Friends />}
+      {ov?.kind === 'visit' && <Visit key={ov.id} id={ov.id} />}
       {toast.value && (
         <div class={`toast toast--${toast.value.kind}`} role="status">
           {toast.value.text}

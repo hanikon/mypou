@@ -1,7 +1,6 @@
 import { STAT_KEYS, type StatKey } from '@kaplya/shared';
-import { lang, setLang, t } from '../i18n';
-import { soundOn, toggleSound } from '../sfx';
-import { overlay, pet, room, type Room } from '../state/store';
+import { t } from '../i18n';
+import { overlay, pet, room, settings, type Room } from '../state/store';
 import { haptic } from '../telegram';
 
 const ICON: Record<StatKey, string> = { satiety: '🍎', hygiene: '🫧', energy: '⚡', mood: '😊' };
@@ -34,11 +33,16 @@ export function StatsBar() {
       </div>
       <div class="hud__side">
         <span class="coins">🪙 {p.coins}</span>
-        <button class="icon-btn" aria-label={t().sound} onClick={toggleSound}>
-          {soundOn.value ? '🔊' : '🔇'}
-        </button>
-        <button class="icon-btn" onClick={() => setLang(lang.value === 'ru' ? 'en' : 'ru')}>
-          {lang.value.toUpperCase()}
+        <button
+          class="icon-btn"
+          aria-label={t().settings.title}
+          onClick={() => {
+            haptic.select();
+            overlay.value = { kind: 'settings' };
+          }}
+        >
+          ⚙️
+          {settings.value && !settings.value.can_message && <i class="dot" aria-hidden="true" />}
         </button>
       </div>
     </header>
@@ -68,6 +72,16 @@ export function Nav() {
           <small>{t().rooms[r.id]}</small>
         </button>
       ))}
+      <button
+        class="nav__btn"
+        onClick={() => {
+          haptic.select();
+          overlay.value = { kind: 'friends' };
+        }}
+      >
+        <span aria-hidden="true">👫</span>
+        <small>{t().friends.title}</small>
+      </button>
       <button
         class="nav__btn"
         onClick={() => {

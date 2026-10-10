@@ -10,3 +10,7 @@ keep_vars = true
 
 [observability]
 enabled = true
+
+# Каждые 5 минут: досылка уведомлений из очереди и напоминания о голоде.
+[triggers]
+crons = ["*/5 * * * *"]

@@ -19,7 +19,7 @@ interface TgButton {
 interface TgWebApp {
   initData: string;
   initDataUnsafe: {
-    user?: { id: number; first_name: string; language_code?: string };
+    user?: { id: number; first_name: string; language_code?: string; allows_write_to_pm?: boolean };
     start_param?: string;
   };
   version: string;
@@ -28,6 +28,8 @@ interface TgWebApp {
   ready(): void;
   expand(): void;
   disableVerticalSwipes?(): void;
+  requestWriteAccess?(cb?: (granted: boolean) => void): void;
+  openTelegramLink(url: string): void;
   onEvent(e: string, cb: () => void): void;
   offEvent(e: string, cb: () => void): void;
   BackButton: { show(): void; hide(): void; onClick(cb: () => void): void; offClick(cb: () => void): void };
@@ -62,6 +64,7 @@ export const features = {
   backButton: atLeast('6.1'),
   haptics: atLeast('6.1'),
   verticalSwipes: atLeast('7.7'),
+  writeAccess: atLeast('6.9'),
 };
 
 export function initTelegram(onTheme: (scheme: 'light' | 'dark') => void) {
@@ -96,4 +99,17 @@ export const haptic = {
 
 export function userLanguage(): string | undefined {
   return tg?.initDataUnsafe.user?.language_code;
+}
+
+/** Попросить у пользователя разрешение, чтобы бот мог присылать сообщения. */
+export function requestWriteAccess(): Promise<boolean> {
+  if (!features.writeAccess || !tg?.requestWriteAccess) return Promise.resolve(false);
+  return new Promise((res) => tg!.requestWriteAccess!((granted) => res(granted)));
+}
+
+/** Поделиться ссылкой через стандартное окно Telegram. */
+export function shareLink(url: string, text: string) {
+  const share = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+  if (inTelegram) tg!.openTelegramLink(share);
+  else window.open(share, '_blank');
 }

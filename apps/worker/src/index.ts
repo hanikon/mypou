@@ -1,10 +1,11 @@
 import { handleApi } from './api';
 import { handleSetup, handleWebhook } from './bot';
 import { missingEnv, type Env } from './env';
+import { runScheduled } from './scheduled';
 import { cors, HttpError, json } from './http';
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
 
@@ -21,7 +22,7 @@ export default {
       const headers = cors(env, req);
       if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
       try {
-        const res = await handleApi(req, env, path);
+        const res = await handleApi(req, env, path, ctx);
         for (const [k, v] of Object.entries(headers)) res.headers.set(k, v);
         return res;
       } catch (e) {
@@ -33,5 +34,10 @@ export default {
 
     if (path === '/') return new Response('ok');
     return json({ error: 'not_found' }, 404);
+  },
+
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
+    if (missingEnv(env).length) return console.error('cron: missing env');
+    ctx.waitUntil(runScheduled(env).catch((e) => console.error(`cron: ${(e as Error).message}`)));
   },
 } satisfies ExportedHandler<Env>;

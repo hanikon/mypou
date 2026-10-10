@@ -42,8 +42,31 @@ async function call<T>(method: 'GET' | 'POST', path: string, body?: unknown): Pr
 
 type PetRes = { pet: PetState };
 
+export interface Settings {
+  lang: 'ru' | 'en';
+  notify: boolean;
+  notify_hunger: boolean;
+  notify_social: boolean;
+  notify_game: boolean;
+  can_message: boolean;
+}
+export type InviteStatus = 'added' | 'already' | 'self' | 'invalid' | 'full';
+export interface FriendBrief {
+  id: number;
+  name: string;
+  emotion: string | null;
+}
+
 export const api = {
-  state: () => call<PetRes>('GET', '/api/state'),
+  state: () =>
+    call<PetRes & { settings: Settings; invite: { status: InviteStatus; name?: string } | null }>('GET', '/api/state'),
+  saveSettings: (patch: Partial<Settings> & { writeAccess?: boolean }) =>
+    call<{ settings: Settings }>('POST', '/api/settings', patch),
+  notifyTest: () => call<{ result: string; error?: string; settings: Settings }>('POST', '/api/notify/test', {}),
+  friends: () => call<{ invite: string | null; code: string; friends: FriendBrief[] }>('GET', '/api/friends'),
+  visit: (id: number) => call<{ friend: { id: number; name: string; pet: PetState } }>('GET', `/api/friends/${id}`),
+  feedFriend: (id: number, item: string) => call<PetRes>('POST', `/api/friends/${id}/feed`, { item }),
+  gift: (id: number, item: string) => call<PetRes>('POST', `/api/friends/${id}/gift`, { item }),
   action: (a: ActionReq) => call<PetRes>('POST', '/api/action', a),
   miniGameStart: () => call<PetRes>('POST', '/api/minigame/start', {}),
   miniGameFinish: (score: number) => call<PetRes & { coins: number }>('POST', '/api/minigame/finish', { score }),

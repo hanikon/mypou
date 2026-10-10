@@ -5,3 +5,4 @@ export * from './pet';
 export * from './storage';
 export * from './actions';
 export * from './initData';
+export * from './social';

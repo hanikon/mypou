@@ -11,6 +11,8 @@ export interface TgUser {
   last_name?: string;
   username?: string;
   language_code?: string;
+  /** Пользователь разрешил боту писать ему. */
+  allows_write_to_pm?: boolean;
 }
 
 export type InitDataResult =

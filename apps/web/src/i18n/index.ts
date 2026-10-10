@@ -20,8 +20,13 @@ function initialLang(): Lang {
 
 export const lang = signal<Lang>(initialLang());
 
+let onChange: ((l: Lang) => void) | undefined;
+/** Подписка на смену языка (чтобы сохранить его на сервере для уведомлений). */
+export const onLangChange = (fn: (l: Lang) => void) => (onChange = fn);
+
 export function setLang(l: Lang) {
   lang.value = l;
+  onChange?.(l);
   document.documentElement.lang = l;
   try {
     localStorage.setItem(KEY, l);

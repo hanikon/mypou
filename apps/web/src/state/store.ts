@@ -3,16 +3,24 @@ import {
   applyAction, coinsForScore, emotionOf, finishMiniGame, MIN_ENERGY_TO_PLAY, sanitize, tick,
   type ActionReq, type PetState,
 } from '@kaplya/shared';
-import { api, ApiError, serverMode } from '../api';
-import { t } from '../i18n';
-import { haptic } from '../telegram';
+import { api, ApiError, serverMode, type InviteStatus, type Settings } from '../api';
+import { lang, onLangChange, t } from '../i18n';
+import { haptic, requestWriteAccess } from '../telegram';
 import { sfx } from '../sfx';
 import { loadJson, saveJson } from './cloud';
 
 export type Room = 'kitchen' | 'bathroom' | 'bedroom' | 'playroom';
-export type Overlay = { kind: 'shop'; tab?: string } | { kind: 'game' } | null;
+export type Overlay =
+  | { kind: 'shop'; tab?: string }
+  | { kind: 'game' }
+  | { kind: 'settings' }
+  | { kind: 'friends' }
+  | { kind: 'visit'; id: number }
+  | null;
 
 export const pet = signal<PetState | null>(null);
+/** Настройки на сервере (только в серверном режиме). */
+export const settings = signal<Settings | null>(null);
 export const loadState = signal<'loading' | 'ready' | 'error'>('loading');
 export const room = signal<Room>('kitchen');
 export const overlay = signal<Overlay>(null);
@@ -34,7 +42,11 @@ export async function load() {
   try {
     const now = Date.now();
     if (serverMode) {
-      pet.value = tick(sanitize((await api.state()).pet, now), now);
+      const res = await api.state();
+      pet.value = tick(sanitize(res.pet, now), now);
+      settings.value = res.settings;
+      if (res.invite) showInviteResult(res.invite.status, res.invite.name);
+      void afterServerLoad();
     } else {
       const raw = await loadJson(SAVE_KEY);
       pet.value = tick(sanitize(raw, now), now);
@@ -71,6 +83,54 @@ export async function flush() {
   }
 }
 
+/* ---------- серверный режим: приглашения, язык, право писать ---------- */
+
+function showInviteResult(status: InviteStatus, name?: string) {
+  // already — повторный запуск по той же ссылке, сообщать не о чем.
+  if (status === 'already') return;
+  const text = t().friends.inviteResult[status](name ?? '');
+  setTimeout(() => showToast(text, status === 'added' ? 'ok' : 'error'), 300);
+  if (status === 'added') haptic.success();
+}
+
+const ASKED_KEY = 'kaplya:askedWrite';
+
+async function afterServerLoad() {
+  const s = settings.value;
+  if (!s) return;
+  // Язык уведомлений — как в приложении.
+  if (s.lang !== lang.value) void saveSettings({ lang: lang.value });
+  // Без разрешения бот не сможет присылать уведомления — спросим один раз.
+  if (!s.can_message) {
+    let asked = false;
+    try {
+      asked = localStorage.getItem(ASKED_KEY) === '1';
+      localStorage.setItem(ASKED_KEY, '1');
+    } catch {
+      /* не критично */
+    }
+    if (!asked) await askWriteAccess();
+  }
+}
+
+export async function askWriteAccess(): Promise<boolean> {
+  const granted = await requestWriteAccess();
+  if (granted) await saveSettings({ writeAccess: true });
+  return granted;
+}
+
+export async function saveSettings(patch: Partial<Settings> & { writeAccess?: boolean }) {
+  if (!serverMode) return;
+  const prev = settings.value;
+  if (prev) settings.value = { ...prev, ...patch } as Settings;
+  try {
+    settings.value = (await api.saveSettings(patch)).settings;
+  } catch (e) {
+    settings.value = prev;
+    fail(e instanceof ApiError ? e.code : 'server');
+  }
+}
+
 /* ---------- общие помощники ---------- */
 
 let toastId = 0;
@@ -87,7 +147,7 @@ export function errorText(code: string): string {
   return e[code] ?? e.server!;
 }
 
-function fail(code: string) {
+export function fail(code: string) {
   haptic.error();
   sfx.error();
   showToast(errorText(code), 'error');
@@ -207,3 +267,5 @@ export function startClock() {
     document.removeEventListener('visibilitychange', onHide);
   };
 }
+
+onLangChange((l) => void saveSettings({ lang: l }));

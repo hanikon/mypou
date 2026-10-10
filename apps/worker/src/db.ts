@@ -44,9 +44,14 @@ function fail(what: string, error: { message: string } | null): never {
 }
 
 export async function upsertUser(sb: SupabaseClient, u: TgUser) {
-  const { error } = await sb
-    .from('users')
-    .upsert({ id: u.id, first_name: u.first_name.slice(0, 64), last_seen_at: new Date().toISOString() }, { onConflict: 'id' });
+  const row: Record<string, unknown> = {
+    id: u.id,
+    first_name: u.first_name.slice(0, 64),
+    last_seen_at: new Date().toISOString(),
+  };
+  // Разрешение писать только добавляем: снимает его ответ Telegram 403 или блокировка бота.
+  if (u.allows_write_to_pm) row.can_message = true;
+  const { error } = await sb.from('users').upsert(row, { onConflict: 'id' });
   if (error) fail('upsert user', error);
 }
 
