@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { buy, equip, getItem, itemsBySlot, type Item, type Slot, type WearSlot } from '@kaplya/shared';
+import { getItem, itemsBySlot, type Item, type Slot, type WearSlot } from '@kaplya/shared';
 import { lang, t } from '../i18n';
 import { Pet } from '../pet/Pet';
 import { Shapes } from '../pet/Shapes';
@@ -30,18 +30,18 @@ export function Shop({ initialTab }: { initialTab?: string }) {
     setSelected(null);
     const slot = item.slot as WearSlot;
     const wearing = p.wear[slot] === item.id;
-    act((s) => equip(s, slot, wearing && slot !== 'color' ? undefined : item.id));
+    act({ type: 'equip', slot, item: wearing && slot !== 'color' ? null : item.id });
   };
 
   const purchase = () => {
     if (!selected) return;
     const item = selected;
-    if (!act((s) => buy(s, item.id))) return;
+    if (!act({ type: 'buy', item: item.id })) return;
     sfx.coin();
     haptic.success();
     showToast(t().bought);
     if (item.slot !== 'food') {
-      act((s) => equip(s, item.slot as WearSlot, item.id));
+      act({ type: 'equip', slot: item.slot as WearSlot, item: item.id });
       setSelected(null);
     }
   };

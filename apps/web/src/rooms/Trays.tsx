@@ -1,12 +1,12 @@
 import { signal } from '@preact/signals';
 import { useRef } from 'preact/hooks';
 import { Draggable } from './Draggable';
-import { feed, itemsBySlot, MIN_ENERGY_TO_PLAY, play, setSleeping, wash } from '@kaplya/shared';
+import { itemsBySlot } from '@kaplya/shared';
 import { lang, t } from '../i18n';
 import { MOUTH, svgToClient } from '../pet/Pet';
 import { Shapes } from '../pet/Shapes';
 import { sfx } from '../sfx';
-import { act, flashEmotion, overlay, pet, showToast } from '../state/store';
+import { act, canPlay, flashEmotion, overlay, pet } from '../state/store';
 import { haptic } from '../telegram';
 
 /** Ссылка на SVG питомца на сцене — нужна, чтобы знать, где рот. */
@@ -46,7 +46,7 @@ export function KitchenTray() {
             onDrop={(x, y) => {
               mouthOpen.value = false;
               if (!(distToMouth(x, y) < 70)) return;
-              if (act((s, now) => feed(s, f.id, now))) {
+              if (act({ type: 'feed', item: f.id })) {
                 sfx.chomp();
                 haptic.success();
                 flashEmotion('eating');
@@ -106,7 +106,7 @@ export function BathroomTray() {
             r.dist = 0;
             r.last = null;
             if (amount < 2) return;
-            if (act((s, now) => wash(s, amount, now))) {
+            if (act({ type: 'wash', amount })) {
               sfx.squeak();
               flashEmotion('happy');
             }
@@ -132,7 +132,7 @@ export function BedroomTray() {
         class={`btn ${p.sleeping ? '' : 'btn--dark'}`}
         onClick={() => {
           haptic.tap();
-          act((s, now) => setSleeping(s, !s.sleeping, now));
+          act({ type: 'sleep', on: !p.sleeping });
         }}
       >
         {p.sleeping ? `💡 ${t().bedroom.lightOn}` : `🌙 ${t().bedroom.lightOff}`}
@@ -148,7 +148,7 @@ export function PlayroomTray() {
         <button
           class="btn"
           onClick={() => {
-            if (act((s, now) => play(s, now))) {
+            if (act({ type: 'play' })) {
               haptic.tap();
               sfx.squeak();
               flashEmotion('happy');
@@ -162,11 +162,8 @@ export function PlayroomTray() {
         <button
           class="btn btn--accent"
           onClick={() => {
-            const p = pet.value!;
-            if (p.sleeping) return showToast(t().errors.sleeping, 'error');
-            if (p.stats.energy < MIN_ENERGY_TO_PLAY) return showToast(t().errors.tired, 'error');
             haptic.tap();
-            overlay.value = { kind: 'game' };
+            if (canPlay()) overlay.value = { kind: 'game' };
           }}
         >
           🫧 {t().playroom.game} <small>{t().playroom.gameHint}</small>

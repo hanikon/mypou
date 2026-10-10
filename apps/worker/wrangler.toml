@@ -1,0 +1,12 @@
+# Имя должно совпадать с именем Worker в Cloudflare (Workers Builds это проверяет).
+name = "kaplya-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Переменные и секреты задаются в панели Cloudflare (Settings → Variables and Secrets).
+# keep_vars не даёт деплою стереть то, что задано в панели.
+keep_vars = true
+
+[observability]
+enabled = true

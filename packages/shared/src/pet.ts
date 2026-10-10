@@ -88,11 +88,12 @@ export const MAX_MINIGAME_COINS = 20;
 export const coinsForScore = (score: number) =>
   Math.max(0, Math.min(MAX_MINIGAME_COINS, Math.floor(score / 3)));
 
-export function finishMiniGame(s: PetState, score: number, now: number): Result {
+/** coinCap — сколько монет ещё можно дать (дневной лимит считает сервер). */
+export function finishMiniGame(s: PetState, score: number, now: number, coinCap = Infinity): Result {
   const t = tick(s, now);
   return ok({
     ...t,
-    coins: t.coins + coinsForScore(score),
+    coins: t.coins + Math.min(coinsForScore(score), Math.max(0, coinCap)),
     stats: addStats(t.stats, { mood: 10, energy: -MINIGAME_ENERGY }),
   });
 }

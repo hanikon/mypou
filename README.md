@@ -11,7 +11,7 @@ Telegram Mini App: виртуальный питомец-«капля» и кр�
 |---|---|---|
 | 0 | Каркас монорепо, CI | ✅ |
 | 1 | Питомец офлайн: показатели, комнаты, магазин, CloudStorage | ✅ |
-| 2 | Worker + Supabase, проверка initData, серверные монеты | ⏳ |
+| 2 | Worker + Supabase, проверка initData, серверные монеты | ✅ |
 | 3 | Друзья, гости, подарки, уведомления | ⏳ |
 | 4 | Крестики-нолики онлайн и против компьютера | ⏳ |
 | 5 | Cron-«будильник» для Supabase | ⏳ |
@@ -21,6 +21,8 @@ Telegram Mini App: виртуальный питомец-«капля» и кр�
 
 ```
 apps/web/            фронтенд: Vite + Preact + TypeScript (Cloudflare Pages)
+apps/worker/         бэкенд: Cloudflare Worker — API, бот grammY (webhook)
+supabase/migrations/ SQL-миграции
   src/pet/           SVG-персонаж и слои вещей
   src/rooms/         комнаты и действия (еда, мыло, свет, игра)
   src/games/         мини-игры
@@ -55,13 +57,54 @@ npm run build      # сборка в apps/web/dist
 
 Показатели (сытость, чистота, энергия, настроение) падают со временем и пересчитываются по метке последнего визита. Ниже 5 они не опускаются: питомец грустит, но не «умирает».
 
-> На этапе 1 монеты считаются на устройстве. С этапа 2 их начисляет и проверяет только сервер.
+## Два режима
 
-## Сохранение
+- **Серверный** (открыто в Telegram и задан `VITE_API_URL`): всё хранится в Supabase. Клиент показывает результат сразу, но сервер пересчитывает каждое действие по тем же правилам (`packages/shared`) и при расхождении откатывает. Монеты начисляет только сервер.
+- **Офлайн** (браузер или нет `VITE_API_URL`): сохранение в Telegram CloudStorage или localStorage. Одно значение CloudStorage ограничено 4096 символами, поэтому длинный JSON режется на ключи `pet_0…pet_N`, а `pet_n` хранит их число.
 
-Состояние хранится в Telegram CloudStorage в виде компактного JSON. Одно значение там ограничено 4096 символами, поэтому длинный JSON режется на ключи `pet_0…pet_N`, а `pet_n` хранит их число. При загрузке данные проверяются (`sanitize`), так что испорченное сохранение не ломает игру.
+## Безопасность сервера
 
-## Деплой фронтенда (Cloudflare Pages)
+- Каждый запрос несёт `Authorization: tma <initData>`. Worker проверяет HMAC-подпись (ключ из токена бота) и возраст `auth_date` (не старше 24 ч). ID пользователя берётся только из проверенных данных.
+- Клиент присылает лишь намерение (`{type: 'buy', item: 'h_crown'}`). Цены, остатки и монеты считает сервер. Неизвестные поля и действия отбрасываются.
+- Мини-игра: сервер запоминает время старта. Результат принимается только через 18–180 с, очки обрезаются до правдоподобных, монет из игр не больше 150 в сутки.
+- Сохранение атомарное, с проверкой версии: параллельные запросы не дублируют монеты и еду.
+- Лимит: 60 запросов в минуту на пользователя.
+- RLS включён во всех таблицах без политик. Ключи `anon`/`authenticated` не видят ничего, работает только `service_role` из Worker.
+- CORS разрешён только для `WEB_ORIGIN` (и `localhost` для разработки).
+- Webhook бота проверяет заголовок `X-Telegram-Bot-Api-Secret-Token`.
+
+## Пошаговая настройка
+
+Порядок: бот → Supabase → Worker → Pages → Mini App. Секреты храни в менеджере паролей и не присылай в чаты.
+
+### 1. Бот в @BotFather
+
+`/newbot` → имя и username. Получишь токен (`BOT_TOKEN`).
+
+### 2. Supabase
+
+1. [supabase.com](https://supabase.com) → New project (Free). Регион поближе, пароль БД сохрани.
+2. **Миграции.** SQL Editor → New query → вставь содержимое `supabase/migrations/20261010000000_init.sql` → Run. Новые миграции из этой папки применяй так же, по порядку имён.
+   - С компьютера можно через CLI: `npx supabase link --project-ref <ref>` и `npx supabase db push`.
+3. **Ключи.** Project Settings → API Keys:
+   - Project URL → `SUPABASE_URL`;
+   - `service_role` (Legacy API Keys) или новый **secret** key → `SUPABASE_SERVICE_ROLE_KEY`. Этот ключ обходит RLS. Он нужен только Worker, во фронтенд и в git его не клади.
+4. Проверка: Table Editor показывает таблицы `users`, `pets`, `inventory`, `friendships`, `games`, `gifts`, `heartbeat`, `rate_limits`, на каждой значок RLS enabled.
+
+### 3. Worker (API и бот)
+
+1. Cloudflare → Workers & Pages → Create → **Import a repository** → `mypou`.
+2. Настройки сборки:
+   - Project name: `kaplya-api` (должно совпадать с `name` в `apps/worker/wrangler.toml`)
+   - Root directory: `/`
+   - Build command: `npm ci`
+   - Deploy command: `npx wrangler deploy --config apps/worker/wrangler.toml`
+3. После первого деплоя: Worker → Settings → Variables and Secrets → добавь как **Secret**:
+   `BOT_TOKEN`, `WEBHOOK_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `WEB_ORIGIN`, `BOT_USERNAME`, `MINIAPP_SHORT_NAME`.
+   `WEBHOOK_SECRET` придумай сам: 32+ случайных символа из `A-Z a-z 0-9 _ -`. `WEB_ORIGIN` пока поставь заглушку `https://example.com`, настоящий адрес впишешь после шага 4 (пустое значение Worker не примет).
+4. Адрес Worker: `https://kaplya-api.<subdomain>.workers.dev`. Открой его, должно быть `ok`.
+
+### 4. Pages (фронтенд)
 
 1. Cloudflare → Workers & Pages → Create → Pages → Connect to Git → репозиторий `mypou`.
 2. Build settings:
@@ -69,16 +112,34 @@ npm run build      # сборка в apps/web/dist
    - Build command: `npm run build`
    - Build output directory: `apps/web/dist`
    - Root directory: `/`
-   - Переменная окружения `NODE_VERSION` = `22`
-3. После деплоя скопируй URL вида `https://<project>.pages.dev`.
+   - Переменные: `NODE_VERSION` = `22`, `VITE_API_URL` = адрес Worker (без `/` в конце)
+3. После деплоя скопируй URL вида `https://<project>.pages.dev` и впиши его в `WEB_ORIGIN` у Worker (без `/` в конце).
 
-## Бот и Mini App в @BotFather
+`VITE_API_URL` встраивается при сборке: после его изменения нужен новый деплой Pages (Deployments → Retry).
 
-1. `/newbot` → имя и username бота. Токен сохрани в менеджере паролей, в чат и в репозиторий его не отправляй.
-2. `/newapp` → выбери бота, укажи название, описание и картинку 640×360. URL: адрес Pages из шага выше, short name: например `play`.
-3. Ссылка на игру будет `https://t.me/<bot_username>/<short_name>`.
+### 5. Подключить бота
 
-Шаги для Supabase и Worker появятся на этапе 2.
+Открой в браузере `https://kaplya-api.<subdomain>.workers.dev/bot/setup`, введи `WEBHOOK_SECRET` и нажми «Настроить». Worker зарегистрирует webhook, команду `/start` и кнопку меню. Секрет уходит в теле POST-запроса, а не в адресе.
+
+Проверка: напиши боту `/start`, придёт кнопка «Играть».
+
+### 6. Mini App в @BotFather
+
+`/newapp` → выбери бота, укажи название, описание и картинку 640×360. URL: адрес Pages, short name: например `play` (он же `MINIAPP_SHORT_NAME`). Ссылка на игру: `https://t.me/<bot_username>/<short_name>`.
+
+### Если что-то не работает
+
+- В игре «Ошибка сервера»: Worker → Logs. В логах пишутся только тексты ошибок, без ключей. Строка `config: missing env ...` означает, что не задана какая-то переменная.
+- «Сессия устарела»: закрой Mini App и открой снова (initData живёт 24 ч).
+- Ошибка CORS в консоли: `WEB_ORIGIN` должен совпадать с адресом Pages посимвольно.
+
+## Локальная разработка Worker
+
+```bash
+cp .env.example apps/worker/.dev.vars   # заполни значения (файл в .gitignore)
+npm run dev -w apps/worker              # http://localhost:8787
+```
+Фронтенд вне Telegram работает офлайн. Серверный режим включается только внутри Telegram.
 
 ## Переменные окружения
 

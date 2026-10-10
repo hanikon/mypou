@@ -1,5 +1,9 @@
 import { computed, signal } from '@preact/signals';
-import { emotionOf, sanitize, tick, type PetState, type Result } from '@kaplya/shared';
+import {
+  applyAction, coinsForScore, emotionOf, finishMiniGame, MIN_ENERGY_TO_PLAY, sanitize, tick,
+  type ActionReq, type PetState,
+} from '@kaplya/shared';
+import { api, ApiError, serverMode } from '../api';
 import { t } from '../i18n';
 import { haptic } from '../telegram';
 import { sfx } from '../sfx';
@@ -28,21 +32,28 @@ const SAVE_KEY = 'pet';
 export async function load() {
   loadState.value = 'loading';
   try {
-    const raw = await loadJson(SAVE_KEY);
     const now = Date.now();
-    pet.value = tick(sanitize(raw, now), now);
+    if (serverMode) {
+      pet.value = tick(sanitize((await api.state()).pet, now), now);
+    } else {
+      const raw = await loadJson(SAVE_KEY);
+      pet.value = tick(sanitize(raw, now), now);
+      if (raw === null) scheduleSave();
+    }
     loadState.value = 'ready';
-    if (raw === null) scheduleSave();
   } catch {
     // Не создаём нового питомца: иначе можно затереть настоящее сохранение.
     loadState.value = 'error';
   }
 }
 
+/* ---------- офлайн-режим: сохранение в CloudStorage / localStorage ---------- */
+
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let dirty = false;
 
-export function scheduleSave(delay = 1200) {
+function scheduleSave(delay = 1200) {
+  if (serverMode) return;
   dirty = true;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flush, delay);
@@ -60,6 +71,8 @@ export async function flush() {
   }
 }
 
+/* ---------- общие помощники ---------- */
+
 let toastId = 0;
 export function showToast(text: string, kind: 'ok' | 'error' = 'ok') {
   const id = ++toastId;
@@ -69,20 +82,108 @@ export function showToast(text: string, kind: 'ok' | 'error' = 'ok') {
   }, 2500);
 }
 
-/** Единая точка изменения состояния: применяет чистое действие из shared и сохраняет. */
-export function act(fn: (s: PetState, now: number) => Result): boolean {
+export function errorText(code: string): string {
+  const e = t().errors as Record<string, string>;
+  return e[code] ?? e.server!;
+}
+
+function fail(code: string) {
+  haptic.error();
+  sfx.error();
+  showToast(errorText(code), 'error');
+}
+
+/* ---------- действия ---------- */
+
+/** Запросы к серверу идут по одному, в порядке нажатий. */
+let queue: Promise<unknown> = Promise.resolve();
+let pending = 0;
+
+async function resync() {
+  try {
+    const now = Date.now();
+    pet.value = tick(sanitize((await api.state()).pet, now), now);
+  } catch {
+    /* следующее действие попробует снова */
+  }
+}
+
+/**
+ * Применяет действие сразу (по тем же правилам, что и сервер), чтобы интерфейс не ждал сети.
+ * В серверном режиме ответ сервера заменяет локальный результат; при отказе — откат.
+ */
+export function act(req: ActionReq): boolean {
   const p = pet.value;
   if (!p) return false;
-  const r = fn(p, Date.now());
+  const r = applyAction(p, req, Date.now());
   if (!r.ok) {
-    haptic.error();
-    sfx.error();
-    showToast(t().errors[r.error], 'error');
+    fail(r.error);
     return false;
   }
   pet.value = r.state;
-  scheduleSave();
+  if (!serverMode) {
+    scheduleSave();
+    return true;
+  }
+  pending++;
+  queue = queue.then(async () => {
+    try {
+      const res = await api.action(req);
+      // Пока в очереди есть ещё действия, не перетираем оптимистичное состояние.
+      if (pending === 1) pet.value = tick(sanitize(res.pet, Date.now()), Date.now());
+    } catch (e) {
+      fail(e instanceof ApiError ? e.code : 'server');
+      await resync();
+    } finally {
+      pending--;
+    }
+  });
   return true;
+}
+
+/** Можно ли сейчас играть (проверка на устройстве, сервер проверит ещё раз). */
+export function canPlay(): boolean {
+  const p = pet.value;
+  if (!p) return false;
+  if (p.sleeping) return fail('sleeping'), false;
+  if (p.stats.energy < MIN_ENERGY_TO_PLAY) return fail('tired'), false;
+  return true;
+}
+
+/** Старт мини-игры: на сервере фиксируется время начала. */
+export async function startMiniGame(): Promise<boolean> {
+  if (!canPlay()) return false;
+  if (!serverMode) return true;
+  try {
+    await queue;
+    await api.miniGameStart();
+    return true;
+  } catch (e) {
+    fail(e instanceof ApiError ? e.code : 'server');
+    return false;
+  }
+}
+
+/** Итог мини-игры. Монеты начисляет сервер (с дневным лимитом); возвращает начисленное. */
+export async function finishMiniGameAct(score: number): Promise<number | null> {
+  const p = pet.value;
+  if (!p) return null;
+  if (!serverMode) {
+    const r = finishMiniGame(p, score, Date.now());
+    if (!r.ok) return null;
+    pet.value = r.state;
+    scheduleSave();
+    return coinsForScore(score);
+  }
+  try {
+    await queue;
+    const res = await api.miniGameFinish(score);
+    pet.value = tick(sanitize(res.pet, Date.now()), Date.now());
+    return res.coins;
+  } catch (e) {
+    fail(e instanceof ApiError ? e.code : 'server');
+    return null;
+  }
 }
 
 let transientTimer: ReturnType<typeof setTimeout> | undefined;

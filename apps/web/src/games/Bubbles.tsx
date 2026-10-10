@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { coinsForScore, finishMiniGame } from '@kaplya/shared';
+import { coinsForScore } from '@kaplya/shared';
 import { t } from '../i18n';
 import { sfx } from '../sfx';
-import { act, overlay, showToast } from '../state/store';
+import { finishMiniGameAct, overlay, showToast, startMiniGame } from '../state/store';
 import { haptic } from '../telegram';
 import { MainAction, useBackButton } from '../ui/telegramButtons';
 
@@ -15,7 +15,7 @@ interface Bubble {
   speed: number;
 }
 
-/** Мини-игра: лопать всплывающие пузыри. Монеты начисляются только по итогу (на этапе 2 — сервером). */
+/** Мини-игра: лопать всплывающие пузыри. Монеты начисляет сервер по итогу, с проверкой времени и лимитом. */
 export function Bubbles() {
   const [phase, setPhase] = useState<'intro' | 'play' | 'done'>('intro');
   const [left, setLeft] = useState(DURATION);
@@ -58,13 +58,25 @@ export function Bubbles() {
     sfx.pop();
   };
 
-  const collect = () => {
-    if (act((s, now) => finishMiniGame(s, score, now))) {
+  const [busy, setBusy] = useState(false);
+
+  const start = async () => {
+    setBusy(true);
+    const ok = await startMiniGame();
+    setBusy(false);
+    if (ok) setPhase('play');
+  };
+
+  const collect = async () => {
+    setBusy(true);
+    const coins = await finishMiniGameAct(score);
+    setBusy(false);
+    if (coins !== null) {
       sfx.coin();
       haptic.success();
-      showToast(`+${coinsForScore(score)} 🪙`);
+      showToast(`+${coins} 🪙`);
+      close();
     }
-    close();
   };
 
   return (
@@ -96,8 +108,8 @@ export function Bubbles() {
           />
         ))}
       </div>
-      {phase === 'intro' && <MainAction text={t().game.start} onClick={() => setPhase('play')} />}
-      {phase === 'done' && <MainAction text={t().game.collect} onClick={collect} />}
+      {phase === 'intro' && <MainAction text={t().game.start} disabled={busy} onClick={start} />}
+      {phase === 'done' && <MainAction text={t().game.collect} disabled={busy} onClick={collect} />}
     </div>
   );
 }
