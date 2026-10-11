@@ -257,3 +257,23 @@ button { font: inherit; color: inherit; }
 .visit { padding-bottom: var(--safe-bottom); }
 .visit .stage { flex: 1; }
 .card:disabled { opacity: 0.5; }
+
+/* Крестики-нолики */
+.ttt-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row__sub { display: block; color: var(--hint); font-size: 12px; margin-top: 2px; }
+.row--static { cursor: default; }
+.ttt-game { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 16px 16px; }
+.ttt-vs { margin: 0; color: var(--hint); font-size: 14px; }
+.ttt-status { margin: 0; font-size: 20px; font-weight: 700; min-height: 28px; }
+.ttt-status.is-mine { color: var(--accent); }
+.ttt-sub { margin: 0; color: var(--hint); font-size: 13px; text-align: center; }
+.ttt-board { width: min(86vw, 52vh, 360px); height: auto; touch-action: manipulation; }
+.ttt-grid path { stroke: var(--hint); stroke-width: 6; stroke-linecap: round; opacity: 0.5; fill: none; }
+.ttt-cell { fill: transparent; }
+.ttt-cell.is-free { cursor: pointer; }
+.ttt-cell.is-free:active { fill: var(--bg2); }
+.ttt-x { stroke: #ef476f; stroke-width: 12; stroke-linecap: round; fill: none; stroke-dasharray: 80; animation: draw 0.25s ease-out both; }
+.ttt-o { stroke: #118ab2; stroke-width: 12; fill: none; stroke-dasharray: 190; animation: draw 0.3s ease-out both; }
+.ttt-win { stroke: #ffd166; stroke-width: 14; stroke-linecap: round; opacity: 0.9; stroke-dasharray: 300; animation: draw 0.4s ease-out both; }
+@keyframes draw { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
+.ttt .spinner { margin: 32px auto; }

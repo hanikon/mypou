@@ -5,7 +5,7 @@ import {
 } from '@kaplya/shared';
 import { api, ApiError, serverMode, type InviteStatus, type Settings } from '../api';
 import { lang, onLangChange, t } from '../i18n';
-import { haptic, requestWriteAccess } from '../telegram';
+import { haptic, requestWriteAccess, startParam } from '../telegram';
 import { sfx } from '../sfx';
 import { loadJson, saveJson } from './cloud';
 
@@ -16,6 +16,7 @@ export type Overlay =
   | { kind: 'settings' }
   | { kind: 'friends' }
   | { kind: 'visit'; id: number }
+  | { kind: 'ttt'; gameId?: string }
   | null;
 
 export const pet = signal<PetState | null>(null);
@@ -36,6 +37,7 @@ export const emotion = computed(() => {
 });
 
 const SAVE_KEY = 'pet';
+let openedFromLink = false;
 
 export async function load() {
   loadState.value = 'loading';
@@ -46,6 +48,12 @@ export async function load() {
       pet.value = tick(sanitize(res.pet, now), now);
       settings.value = res.settings;
       if (res.invite) showInviteResult(res.invite.status, res.invite.name);
+      // Ссылка из уведомления «твой ход» открывает сразу партию.
+      const game = /^game_([0-9a-f-]{36})$/i.exec(startParam() ?? '');
+      if (game && !openedFromLink) {
+        openedFromLink = true;
+        overlay.value = { kind: 'ttt', gameId: game[1] };
+      }
       void afterServerLoad();
     } else {
       const raw = await loadJson(SAVE_KEY);

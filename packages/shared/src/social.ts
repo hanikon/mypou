@@ -14,7 +14,7 @@ export function parseInvite(startParam: string | undefined | null): string | nul
 
 /* ---------------- уведомления ---------------- */
 
-export type NotifyKind = 'hungry' | 'visit' | 'feed' | 'gift' | 'friend' | 'turn' | 'test';
+export type NotifyKind = 'hungry' | 'visit' | 'feed' | 'gift' | 'friend' | 'turn' | 'game_over' | 'test';
 export type NotifyPref = 'notify_hunger' | 'notify_social' | 'notify_game';
 
 /** Какая настройка отключает этот тип. test отключить нельзя — он и проверяет доставку. */
@@ -25,6 +25,7 @@ export const KIND_PREF: Record<NotifyKind, NotifyPref | null> = {
   gift: 'notify_social',
   friend: 'notify_social',
   turn: 'notify_game',
+  game_over: 'notify_game',
   test: null,
 };
 

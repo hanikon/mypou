@@ -168,6 +168,15 @@ export function PlayroomTray() {
         >
           🫧 {t().playroom.game} <small>{t().playroom.gameHint}</small>
         </button>
+        <button
+          class="btn"
+          onClick={() => {
+            haptic.tap();
+            overlay.value = { kind: 'ttt' };
+          }}
+        >
+          ❌⭕ {t().playroom.ttt}
+        </button>
       </div>
     </div>
   );

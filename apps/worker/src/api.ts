@@ -7,6 +7,7 @@ import { db, getPet, rateLimit, updatePet, upsertUser } from './db';
 import type { Env } from './env';
 import { HttpError, json, readJson } from './http';
 import { enqueue, flush } from './notify';
+import { createGame, getGame, listGames, makeMove, resign } from './games';
 import { acceptInvite, feedFriend, giveGift, inviteCode, inviteLink, listFriends, visit } from './social';
 
 /** initData живёт сутки: Mini App может долго висеть открытой. */
@@ -39,7 +40,8 @@ export async function handleApi(req: Request, env: Env, path: string, ctx: Execu
   const session = await auth(req, env);
   const user: TgUser = session.user;
   const sb = db(env);
-  await rateLimit(sb, user.id, 'api', 60, 60);
+  // Партия опрашивается раз в 2 с, поэтому лимит с запасом.
+  await rateLimit(sb, user.id, 'api', 120, 60);
 
   if (req.method === 'GET' && path === '/api/state') {
     await upsertUser(sb, user);
@@ -147,6 +149,33 @@ export async function handleApi(req: Request, env: Env, path: string, ctx: Execu
       // Уведомление уже в очереди (в той же транзакции) — отправляем всё готовое.
       ctx.waitUntil(flush(env, sb, undefined, 10).catch(() => undefined));
       return json({ pet: r.pet });
+    }
+  }
+
+  /* ---------- крестики-нолики ---------- */
+
+  if (path === '/api/games') {
+    if (req.method === 'GET') return json(await listGames(sb, user.id));
+    if (req.method === 'POST') {
+      const { friend } = (await readJson(req)) as { friend?: unknown };
+      return json({ game: await createGame(sb, user.id, Number(friend)) });
+    }
+  }
+
+  const g = /^\/api\/games\/([0-9a-f-]{36})(?:\/(move|resign))?$/i.exec(path);
+  if (g) {
+    const id = g[1]!;
+    if (req.method === 'GET' && !g[2]) return json({ game: await getGame(sb, user.id, id) });
+    if (req.method === 'POST' && g[2] === 'move') {
+      const b = (await readJson(req)) as { cell?: unknown; moveNo?: unknown };
+      const r = await makeMove(sb, user, id, b.cell, b.moveNo);
+      sendSoon(ctx, env, sb, r.notifyIds);
+      return json({ game: r.game, pet: r.pet });
+    }
+    if (req.method === 'POST' && g[2] === 'resign') {
+      const r = await resign(sb, user, id);
+      sendSoon(ctx, env, sb, r.notifyIds);
+      return json({ game: r.game });
     }
   }
 

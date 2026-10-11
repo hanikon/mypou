@@ -6,3 +6,4 @@ export * from './storage';
 export * from './actions';
 export * from './initData';
 export * from './social';
+export * from './tictactoe';

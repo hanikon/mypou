@@ -1,5 +1,6 @@
 import { useEffect } from 'preact/hooks';
 import { Bubbles } from './games/Bubbles';
+import { TicTacToe } from './games/TicTacToe';
 import { t } from './i18n';
 import { Pet } from './pet/Pet';
 import { RoomBackground } from './rooms/RoomBackground';
@@ -63,6 +64,7 @@ export function App() {
       {ov?.kind === 'settings' && <Settings />}
       {ov?.kind === 'friends' && <Friends />}
       {ov?.kind === 'visit' && <Visit key={ov.id} id={ov.id} />}
+      {ov?.kind === 'ttt' && <TicTacToe key={ov.gameId ?? 'menu'} gameId={ov.gameId} />}
       {toast.value && (
         <div class={`toast toast--${toast.value.kind}`} role="status">
           {toast.value.text}

@@ -4,7 +4,7 @@ import { deliveryOutcome, getItem, KIND_PREF, type NotifyKind, type SendError } 
 import { tgClient, type Env } from './env';
 
 type Lang = 'ru' | 'en';
-type Payload = { name?: string; item?: string; gameId?: string };
+type Payload = { name?: string; item?: string; gameId?: string; result?: 'lost' | 'draw' | 'resigned' };
 
 const TEXT: Record<Lang, Record<NotifyKind, (p: Payload, item: string) => string>> = {
   ru: {
@@ -14,6 +14,12 @@ const TEXT: Record<Lang, Record<NotifyKind, (p: Payload, item: string) => string
     gift: (p, item) => `🎁 Новый подарок: ${item}! Отправитель: ${p.name ?? 'друг'}.`,
     friend: (p) => `🤝 Приглашение принято! ${p.name ?? 'Друг'} теперь в друзьях.`,
     turn: (p) => `🎮 Твой ход в крестиках-ноликах. Соперник: ${p.name ?? 'друг'}.`,
+    game_over: (p) =>
+      p.result === 'draw'
+        ? `🤝 Ничья в крестиках-ноликах. Соперник: ${p.name ?? 'друг'}. Ещё партию?`
+        : p.result === 'resigned'
+          ? `🏆 Соперник сдался — победа твоя! Соперник: ${p.name ?? 'друг'}.`
+          : `😅 Партия проиграна. Победитель: ${p.name ?? 'друг'}. Реванш?`,
     test: () => '✅ Уведомления работают! Так будут приходить новости о питомце.',
   },
   en: {
@@ -23,6 +29,12 @@ const TEXT: Record<Lang, Record<NotifyKind, (p: Payload, item: string) => string
     gift: (p, item) => `🎁 ${p.name ?? 'A friend'} sent you a gift: ${item}!`,
     friend: (p) => `🤝 ${p.name ?? 'A friend'} accepted your invite. You are friends now!`,
     turn: (p) => `🎮 Your turn in tic-tac-toe against ${p.name ?? 'your friend'}.`,
+    game_over: (p) =>
+      p.result === 'draw'
+        ? `🤝 Draw in tic-tac-toe against ${p.name ?? 'your friend'}. Another round?`
+        : p.result === 'resigned'
+          ? `🏆 ${p.name ?? 'Your friend'} resigned — you win!`
+          : `😅 ${p.name ?? 'Your friend'} won the tic-tac-toe game. Rematch?`,
     test: () => '✅ Notifications work! This is how pet news will arrive.',
   },
 };
@@ -131,7 +143,7 @@ export async function flush(env: Env, sb: SupabaseClient, ids?: number[], limit 
     const lang: Lang = u.lang === 'en' ? 'en' : 'ru';
     const item = getItem(n.payload.item)?.name[lang] ?? '';
     const text = TEXT[lang][n.kind]?.(n.payload, item) ?? '';
-    const startParam = n.kind === 'turn' && n.payload.gameId ? `game_${n.payload.gameId}` : undefined;
+    const startParam = n.payload.gameId ? `game_${n.payload.gameId}` : undefined;
 
     let err: SendError | null = null;
     try {

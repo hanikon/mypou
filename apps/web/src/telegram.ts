@@ -30,6 +30,7 @@ interface TgWebApp {
   disableVerticalSwipes?(): void;
   requestWriteAccess?(cb?: (granted: boolean) => void): void;
   openTelegramLink(url: string): void;
+  showConfirm?(message: string, cb: (ok: boolean) => void): void;
   onEvent(e: string, cb: () => void): void;
   offEvent(e: string, cb: () => void): void;
   BackButton: { show(): void; hide(): void; onClick(cb: () => void): void; offClick(cb: () => void): void };
@@ -113,3 +114,14 @@ export function shareLink(url: string, text: string) {
   if (inTelegram) tg!.openTelegramLink(share);
   else window.open(share, '_blank');
 }
+
+/** Подтверждение: нативное окно Telegram или обычный confirm в браузере. */
+export function confirmDialog(message: string): Promise<boolean> {
+  if (inTelegram && tg!.isVersionAtLeast('6.2') && tg!.showConfirm) {
+    return new Promise((res) => tg!.showConfirm!(message, res));
+  }
+  return Promise.resolve(window.confirm(message));
+}
+
+/** Параметр запуска Mini App (?startapp=...). */
+export const startParam = (): string | undefined => tg?.initDataUnsafe.start_param;

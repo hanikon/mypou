@@ -57,6 +57,23 @@ export interface FriendBrief {
   emotion: string | null;
 }
 
+export interface GameView {
+  id: string;
+  me: 'X' | 'O';
+  opponent: { id: number; name: string };
+  board: string;
+  turn: 'X' | 'O';
+  status: 'waiting' | 'playing' | 'finished' | 'cancelled';
+  winner: 'X' | 'O' | 'D' | null;
+  moveNo: number;
+  finishedAt: string | null;
+}
+export interface GamesList {
+  active: GameView[];
+  history: GameView[];
+  score: Record<string, { name: string; wins: number; losses: number; draws: number }>;
+}
+
 export const api = {
   state: () =>
     call<PetRes & { settings: Settings; invite: { status: InviteStatus; name?: string } | null }>('GET', '/api/state'),
@@ -67,6 +84,12 @@ export const api = {
   visit: (id: number) => call<{ friend: { id: number; name: string; pet: PetState } }>('GET', `/api/friends/${id}`),
   feedFriend: (id: number, item: string) => call<PetRes>('POST', `/api/friends/${id}/feed`, { item }),
   gift: (id: number, item: string) => call<PetRes>('POST', `/api/friends/${id}/gift`, { item }),
+  games: () => call<GamesList>('GET', '/api/games'),
+  newGame: (friend: number) => call<{ game: GameView }>('POST', '/api/games', { friend }),
+  game: (id: string) => call<{ game: GameView }>('GET', `/api/games/${id}`),
+  move: (id: string, cell: number, moveNo: number) =>
+    call<{ game: GameView; pet?: PetState }>('POST', `/api/games/${id}/move`, { cell, moveNo }),
+  resign: (id: string) => call<{ game: GameView }>('POST', `/api/games/${id}/resign`, {}),
   action: (a: ActionReq) => call<PetRes>('POST', '/api/action', a),
   miniGameStart: () => call<PetRes>('POST', '/api/minigame/start', {}),
   miniGameFinish: (score: number) => call<PetRes & { coins: number }>('POST', '/api/minigame/finish', { score }),
