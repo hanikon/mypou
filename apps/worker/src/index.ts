@@ -1,6 +1,7 @@
 import { handleApi } from './api';
 import { handleSetup, handleWebhook } from './bot';
 import { missingEnv, type Env } from './env';
+import { HEARTBEAT_CRON, health, heartbeat } from './heartbeat';
 import { runScheduled } from './scheduled';
 import { cors, HttpError, json } from './http';
 
@@ -33,11 +34,13 @@ export default {
     }
 
     if (path === '/') return new Response('ok');
+    if (path === '/health') return json(await health(env));
     return json({ error: 'not_found' }, 404);
   },
 
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
     if (missingEnv(env).length) return console.error('cron: missing env');
-    ctx.waitUntil(runScheduled(env).catch((e) => console.error(`cron: ${(e as Error).message}`)));
+    const job = event.cron === HEARTBEAT_CRON ? heartbeat(env, 'cron') : runScheduled(env);
+    ctx.waitUntil(job.then(() => undefined).catch((e) => console.error(`cron: ${(e as Error).message}`)));
   },
 } satisfies ExportedHandler<Env>;
